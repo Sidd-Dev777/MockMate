@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MockMate — MCQ Practice</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0f;
+  --surface: #12121a;
+  --card: #1a1a26;
+  --border: #2a2a3d;
+  --accent: #7c6fff;
+  --accent2: #ff6b6b;
+  --accent3: #43e97b;
+  --text: #e8e8f0;
+  --muted: #7070a0;
+  --glow: rgba(124,111,255,0.15);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed;
+  top: -30%; left: -10%;
+  width: 60vw; height: 60vw;
+  background: radial-gradient(circle, rgba(124,111,255,0.06) 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+body::after {
+  content: '';
+  position: fixed;
+  bottom: -20%; right: -10%;
+  width: 50vw; height: 50vw;
+  background: radial-gradient(circle, rgba(255,107,107,0.05) 0%, transparent 70%);
+  pointer-events: none; z-index: 0;
+}
+
+/* ── Header ── */
+header {
+  position: relative; z-index: 10;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 40px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(10,10,15,0.8);
+  backdrop-filter: blur(12px);
+}
+.logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.5rem; letter-spacing: -0.5px; }
+.logo span { color: var(--accent); }
+.badge {
+  font-family: 'DM Mono', monospace; font-size: 0.7rem;
+  background: var(--glow); border: 1px solid var(--accent);
+  color: var(--accent); padding: 3px 10px; border-radius: 20px; letter-spacing: 1px;
+}
+
+/* ── Screens ── */
+.screen { display: none; position: relative; z-index: 1; }
+.screen.active { display: block; }
+
+/* ── Upload Screen ── */
+#upload-screen {
+  max-width: 680px; margin: 60px auto; padding: 0 24px;
+  animation: fadeUp 0.5s ease both;
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hero-tag {
+  font-family: 'DM Mono', monospace; font-size: 0.75rem;
+  color: var(--accent); letter-spacing: 2px; text-transform: uppercase;
+  margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+}
+.hero-tag::before { content: ''; width: 24px; height: 2px; background: var(--accent); display: inline-block; }
+h1 {
+  font-family: 'Syne', sans-serif; font-weight: 800;
+  font-size: clamp(2rem, 5vw, 3rem); line-height: 1.1;
+  letter-spacing: -1px; margin-bottom: 16px;
+}
+h1 em { color: var(--accent); font-style: normal; }
+.subtitle { color: var(--muted); font-size: 1rem; line-height: 1.6; margin-bottom: 40px; }
+
+/* Upload Box */
+.upload-card {
+  background: var(--card); border: 1.5px dashed var(--border);
+  border-radius: 20px; padding: 48px 32px; text-align: center;
+  cursor: pointer; transition: all 0.3s; position: relative; overflow: hidden;
+}
+.upload-card:hover, .upload-card.drag-over {
+  border-color: var(--accent);
+  background: rgba(124,111,255,0.04);
+  box-shadow: 0 0 40px var(--glow);
+}
+.upload-icon { font-size: 3rem; margin-bottom: 16px; display: block; }
+.upload-card h3 { font-family: 'Syne', sans-serif; font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; }
+.upload-card p { color: var(--muted); font-size: 0.9rem; }
+.file-types { display: flex; gap: 8px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
+.file-type-tag {
+  font-family: 'DM Mono', monospace; font-size: 0.7rem;
+  background: var(--surface); border: 1px solid var(--border);
+  color: var(--muted); padding: 3px 10px; border-radius: 6px;
+}
+#file-input { display: none; }
+
+/* Config */
+.config-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; }
+.config-group label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 8px; font-family: 'DM Mono', monospace; letter-spacing: 0.5px; }
+.config-group select,
+.config-group input,
+.api-input-group input {
+  width: 100%; background: var(--card); border: 1.5px solid var(--border);
+  border-radius: 10px; color: var(--text); font-family: 'DM Mono', monospace;
+  font-size: 0.9rem; padding: 10px 14px; outline: none;
+  transition: border-color 0.2s; appearance: none;
+}
+.config-group select:focus,
+.config-group input:focus,
+.api-input-group input:focus { border-color: var(--accent); }
+.api-section { margin-top: 20px; }
+.api-input-group { position: relative; }
+.api-input-group input { padding-right: 44px; }
+.toggle-key {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1rem;
+}
+
+/* File selected preview */
+.file-preview {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px 18px;
+  display: none; align-items: center; gap: 12px; margin-top: 16px;
+}
+.file-preview.show { display: flex; }
+.file-preview .file-icon { font-size: 1.5rem; }
+.file-preview .file-info { flex: 1; min-width: 0; }
+.file-preview .file-name { font-size: 0.9rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-preview .file-size { font-size: 0.75rem; color: var(--muted); }
+.file-preview .remove-file { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1.1rem; transition: color 0.2s; }
+.file-preview .remove-file:hover { color: var(--accent2); }
+
+/* Paste area */
+.paste-divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 20px 0; color: var(--muted); font-size: 0.8rem; font-family: 'DM Mono', monospace;
+}
+.paste-divider::before, .paste-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+.paste-area {
+  width: 100%; background: var(--card); border: 1.5px solid var(--border);
+  border-radius: 14px; color: var(--text); font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem; padding: 16px; outline: none;
+  transition: border-color 0.2s; resize: vertical; min-height: 100px;
+  line-height: 1.6;
+}
+.paste-area:focus { border-color: var(--accent); }
+.paste-area::placeholder { color: var(--muted); }
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 14px 28px; border-radius: 12px; font-family: 'Syne', sans-serif;
+  font-weight: 700; font-size: 1rem; cursor: pointer; border: none; transition: all 0.2s;
+}
+.btn-primary {
+  background: var(--accent); color: #fff; width: 100%; margin-top: 24px;
+  box-shadow: 0 4px 24px rgba(124,111,255,0.3);
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(124,111,255,0.4); }
+.btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+/* ── Loading Screen ── */
+#loading-screen {
+  max-width: 480px; margin: 100px auto; padding: 0 24px;
+  text-align: center; animation: fadeUp 0.4s ease both;
+}
+.loader-ring { width: 80px; height: 80px; margin: 0 auto 32px; position: relative; }
+.loader-ring svg { animation: spin 1.5s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loader-ring circle { fill: none; stroke-width: 3; stroke-linecap: round; }
+.loader-ring .track { stroke: var(--border); }
+.loader-ring .fill { stroke: var(--accent); stroke-dasharray: 180 60; animation: spin 1.2s ease-in-out infinite; transform-origin: center; }
+#loading-screen h2 { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; }
+#loading-screen p { color: var(--muted); font-size: 0.9rem; }
+.loading-steps {
+  margin-top: 32px; text-align: left; background: var(--card);
+  border: 1px solid var(--border); border-radius: 14px; padding: 20px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.load-step { display: flex; align-items: center; gap: 12px; font-size: 0.85rem; color: var(--muted); transition: color 0.3s; }
+.load-step.done { color: var(--accent3); }
+.load-step.active { color: var(--text); }
+.step-dot {
+  width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; flex-shrink: 0; transition: all 0.3s;
+}
+.load-step.done .step-dot { background: var(--accent3); border-color: var(--accent3); color: #000; }
+.load-step.active .step-dot { border-color: var(--accent); animation: pulse-dot 1s ease infinite; }
+@keyframes pulse-dot {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(124,111,255,0.4); }
+  50%       { box-shadow: 0 0 0 6px rgba(124,111,255,0); }
+}
+
+/* ── Quiz Screen ── */
+#quiz-screen {
+  max-width: 720px; margin: 0 auto; padding: 40px 24px 80px;
+  animation: fadeUp 0.4s ease both;
+}
+.quiz-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.quiz-meta { font-family: 'DM Mono', monospace; font-size: 0.8rem; color: var(--muted); }
+.q-counter { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 1rem; color: var(--accent); }
+.progress-bar { height: 4px; background: var(--border); border-radius: 2px; margin-bottom: 36px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #a78bfa); border-radius: 2px; transition: width 0.5s cubic-bezier(0.4,0,0.2,1); }
+.question-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 32px; margin-bottom: 24px; }
+.q-tag { font-family: 'DM Mono', monospace; font-size: 0.7rem; color: var(--accent); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 12px; }
+.question-text { font-family: 'Syne', sans-serif; font-size: 1.15rem; font-weight: 600; line-height: 1.5; color: var(--text); }
+.options-grid { display: flex; flex-direction: column; gap: 12px; }
+.option-btn {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: 14px; padding: 16px 20px; text-align: left; cursor: pointer;
+  transition: all 0.2s; display: flex; align-items: center; gap: 14px;
+  color: var(--text); font-size: 0.95rem; font-family: 'DM Sans', sans-serif; line-height: 1.4;
+}
+.option-btn:hover:not(:disabled) { border-color: var(--accent); background: rgba(124,111,255,0.06); transform: translateX(4px); }
+.option-btn.selected { border-color: var(--accent); background: rgba(124,111,255,0.1); }
+.option-btn.correct { border-color: var(--accent3); background: rgba(67,233,123,0.08); color: var(--accent3); }
+.option-btn.wrong { border-color: var(--accent2); background: rgba(255,107,107,0.08); color: var(--accent2); }
+.option-key {
+  width: 32px; height: 32px; border-radius: 8px; background: var(--surface);
+  border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
+  font-family: 'DM Mono', monospace; font-size: 0.8rem; font-weight: 500;
+  flex-shrink: 0; transition: all 0.2s;
+}
+.option-btn.correct .option-key { background: var(--accent3); border-color: var(--accent3); color: #000; }
+.option-btn.wrong .option-key { background: var(--accent2); border-color: var(--accent2); color: #fff; }
+.option-btn.selected .option-key { background: var(--accent); border-color: var(--accent); color: #fff; }
+.explanation-box {
+  background: var(--surface); border: 1px solid var(--border);
+  border-left: 3px solid var(--accent); border-radius: 12px; padding: 16px 20px;
+  font-size: 0.88rem; color: var(--muted); line-height: 1.6;
+  display: none; animation: fadeUp 0.3s ease both;
+}
+.explanation-box.show { display: block; }
+.explanation-box strong { color: var(--text); }
+.quiz-nav { display: flex; gap: 12px; margin-top: 24px; }
+.btn-nav {
+  flex: 1; background: var(--card); border: 1.5px solid var(--border);
+  color: var(--text); padding: 13px; border-radius: 12px;
+  font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.95rem;
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-nav:hover { border-color: var(--accent); color: var(--accent); }
+.btn-nav.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-nav.primary:hover { background: #6a5ef5; }
+.btn-nav:disabled { opacity: 0.3; cursor: not-allowed; }
+
+/* ── Results Screen ── */
+#results-screen {
+  max-width: 620px; margin: 60px auto; padding: 0 24px 80px;
+  animation: fadeUp 0.5s ease both; text-align: center;
+}
+.score-ring-wrap { position: relative; width: 160px; height: 160px; margin: 32px auto; }
+.score-ring-wrap svg { transform: rotate(-90deg); }
+.score-ring-wrap .ring-bg { stroke: var(--border); }
+.score-ring-wrap .ring-fill {
+  stroke: var(--accent3); stroke-linecap: round;
+  transition: stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1);
+}
+.score-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.score-number { font-family: 'Syne', sans-serif; font-size: 2.2rem; font-weight: 800; line-height: 1; }
+.score-label { font-size: 0.75rem; color: var(--muted); font-family: 'DM Mono', monospace; }
+#results-screen h2 { font-family: 'Syne', sans-serif; font-size: 1.8rem; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.5px; }
+#results-screen .subtitle { margin-bottom: 32px; }
+.stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 32px; }
+.stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 18px 12px; }
+.stat-val { font-family: 'Syne', sans-serif; font-size: 1.6rem; font-weight: 800; margin-bottom: 4px; }
+.stat-val.green { color: var(--accent3); }
+.stat-val.red { color: var(--accent2); }
+.stat-val.blue { color: var(--accent); }
+.stat-lbl { font-size: 0.75rem; color: var(--muted); font-family: 'DM Mono', monospace; }
+.review-list { text-align: left; display: flex; flex-direction: column; gap: 10px; margin-bottom: 32px; }
+.review-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 18px; font-size: 0.87rem; line-height: 1.5; }
+.review-item .ri-q { color: var(--muted); margin-bottom: 6px; font-size: 0.8rem; }
+.review-item .ri-ans { display: flex; gap: 8px; align-items: flex-start; }
+.ri-badge { font-size: 0.65rem; padding: 2px 7px; border-radius: 6px; font-family: 'DM Mono', monospace; white-space: nowrap; margin-top: 2px; }
+.ri-badge.correct { background: rgba(67,233,123,0.15); color: var(--accent3); }
+.ri-badge.wrong { background: rgba(255,107,107,0.15); color: var(--accent2); }
+.results-actions { display: flex; gap: 12px; }
+.results-actions .btn { flex: 1; }
+.btn-outline { background: transparent; border: 1.5px solid var(--border); color: var(--text); }
+.btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Error toast */
+.toast {
+  position: fixed; bottom: 24px; left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--accent2); color: #fff; font-size: 0.88rem;
+  padding: 12px 24px; border-radius: 12px; z-index: 999;
+  transition: transform 0.3s ease; max-width: 90vw; text-align: center;
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* Model info note */
+.model-note {
+  font-family: 'DM Mono', monospace; font-size: 0.72rem;
+  color: var(--muted); text-align: center; margin-top: 12px;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.model-note::before { content: '⚡'; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Mock<span>Mate</span></div>
+  <div class="badge">DeepSeek · MCQ</div>
+</header>
+
+<!-- ════ UPLOAD SCREEN ════ -->
+<div id="upload-screen" class="screen active">
+  <div class="hero-tag">powered by deepseek</div>
+  <h1>Upload. Generate.<br><em>Ace It.</em></h1>
+  <p class="subtitle">Drop any study material as a <strong>.txt</strong> file — UPSC, NEET, SSC, or anything else — and MockMate will auto-generate challenging MCQs for you to practice.</p>
+
+  <!-- Drop zone -->
+  <div class="upload-card" id="drop-zone" onclick="document.getElementById('file-input').click()">
+    <span class="upload-icon">📄</span>
+    <h3>Drop your .txt study file here</h3>
+    <p>or click to browse</p>
+    <div class="file-types">
+      <span class="file-type-tag">TXT</span>
+      <span class="file-type-tag">.text</span>
+    </div>
+    <input type="file" id="file-input" accept=".txt,.text">
+  </div>
+
+  <!-- File preview -->
+  <div class="file-preview" id="file-preview">
+    <span class="file-icon">📎</span>
+    <div class="file-info">
+      <div class="file-name" id="file-name">—</div>
+      <div class="file-size" id="file-size">—</div>
+    </div>
+    <button class="remove-file" onclick="removeFile()">✕</button>
+  </div>
+
+  <!-- OR paste text -->
+  <div class="paste-divider">or paste text directly</div>
+  <textarea
+    class="paste-area"
+    id="paste-area"
+    placeholder="Paste your notes or study material here…"
+    rows="5"
+  ></textarea>
+
+  <!-- Config -->
+  <div class="config-row">
+    <div class="config-group">
+      <label>Number of Questions</label>
+      <select id="num-questions">
+        <option value="5">5 questions</option>
+        <option value="10" selected>10 questions</option>
+        <option value="15">15 questions</option>
+        <option value="20">20 questions</option>
+      </select>
+    </div>
+    <div class="config-group">
+      <label>Difficulty</label>
+      <select id="difficulty">
+        <option value="easy">Easy</option>
+        <option value="medium" selected>Medium</option>
+        <option value="hard">Hard</option>
+        <option value="mixed">Mixed</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- API Key -->
+  <div class="api-section">
+    <div class="config-group">
+      <label>OpenRouter API Key</label>
+      <div class="api-input-group">
+        <input type="password" id="api-key" placeholder="sk-or-v1-…" />
+        <button class="toggle-key" onclick="toggleKey()">👁</button>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn btn-primary" id="start-btn" onclick="startGeneration()">
+    ✦ Generate MCQs
+  </button>
+  <div class="model-note">deepseek/deepseek-chat via openrouter.ai</div>
+</div>
+
+<!-- ════ LOADING SCREEN ════ -->
+<div id="loading-screen" class="screen">
+  <div class="loader-ring">
+    <svg viewBox="0 0 80 80" width="80" height="80">
+      <circle class="track" cx="40" cy="40" r="34" />
+      <circle class="fill"  cx="40" cy="40" r="34" stroke-dasharray="140 80" />
+    </svg>
+  </div>
+  <h2>Generating your quiz…</h2>
+  <p>DeepSeek is reading your material and crafting questions</p>
+  <div class="loading-steps">
+    <div class="load-step active" id="step-1">
+      <div class="step-dot">1</div>
+      <span>Reading &amp; extracting content</span>
+    </div>
+    <div class="load-step" id="step-2">
+      <div class="step-dot">2</div>
+      <span>Analyzing key concepts</span>
+    </div>
+    <div class="load-step" id="step-3">
+      <div class="step-dot">3</div>
+      <span>Generating MCQs with DeepSeek</span>
+    </div>
+    <div class="load-step" id="step-4">
+      <div class="step-dot">4</div>
+      <span>Preparing your quiz</span>
+    </div>
+  </div>
+</div>
+
+<!-- ════ QUIZ SCREEN ════ -->
+<div id="quiz-screen" class="screen">
+  <div class="quiz-header">
+    <div class="quiz-meta" id="quiz-topic">MockMate Quiz</div>
+    <div class="q-counter"><span id="q-current">1</span> / <span id="q-total">10</span></div>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:10%"></div></div>
+
+  <div class="question-card">
+    <div class="q-tag">Question <span id="q-num">01</span></div>
+    <div class="question-text" id="question-text">Loading question…</div>
+  </div>
+
+  <div class="options-grid" id="options-grid"></div>
+
+  <div class="explanation-box" id="explanation-box">
+    <strong>Explanation:</strong> <span id="explanation-text"></span>
+  </div>
+
+  <div class="quiz-nav">
+    <button class="btn-nav" id="prev-btn" onclick="prevQuestion()">← Prev</button>
+    <button class="btn-nav primary" id="next-btn" onclick="nextQuestion()">Next →</button>
+  </div>
+</div>
+
+<!-- ════ RESULTS SCREEN ════ -->
+<div id="results-screen" class="screen">
+  <div class="hero-tag">quiz complete</div>
+  <h2 id="result-headline">Great job!</h2>
+  <p class="subtitle" id="result-subline">Here's how you did on your practice session.</p>
+
+  <div class="score-ring-wrap">
+    <svg viewBox="0 0 160 160" width="160" height="160">
+      <circle class="ring-bg"   cx="80" cy="80" r="66" stroke-width="10" fill="none"/>
+      <circle class="ring-fill" id="ring-fill" cx="80" cy="80" r="66" stroke-width="10" fill="none"
+        stroke-dasharray="414.69" stroke-dashoffset="414.69"/>
+    </svg>
+    <div class="score-center">
+      <div class="score-number" id="score-pct">0%</div>
+      <div class="score-label">SCORE</div>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-val green" id="stat-correct">0</div><div class="stat-lbl">Correct</div></div>
+    <div class="stat-card"><div class="stat-val red"   id="stat-wrong">0</div><div class="stat-lbl">Wrong</div></div>
+    <div class="stat-card"><div class="stat-val blue"  id="stat-skipped">0</div><div class="stat-lbl">Skipped</div></div>
+  </div>
+
+  <div class="review-list" id="review-list"></div>
+
+  <div class="results-actions">
+    <button class="btn btn-outline" onclick="retakeQuiz()">↩ Retake</button>
+    <button class="btn btn-primary" onclick="newQuiz()">+ New Quiz</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ─────────────────────────────────────────
+   State
+───────────────────────────────────────── */
+let questions   = [];
+let current     = 0;
+let userAnswers = [];
+let fileContent = '';
+let selectedFile = null;
+
+/* ─────────────────────────────────────────
+   File handling  (TXT only)
+───────────────────────────────────────── */
+const dropZone  = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+
+dropZone.addEventListener('dragover', e => {
+  e.preventDefault();
+  dropZone.classList.add('drag-over');
+});
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f) handleFile(f);
+});
+fileInput.addEventListener('change', e => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+function handleFile(file) {
+  // Reject non-text files
+  if (!file.name.match(/\.(txt|text)$/i) && file.type !== 'text/plain') {
+    showToast('Only .txt files are supported. Please upload a plain text file.');
+    return;
+  }
+  selectedFile = file;
+  document.getElementById('file-name').textContent = file.name;
+  document.getElementById('file-size').textContent = formatSize(file.size);
+  document.getElementById('file-preview').classList.add('show');
+  // Clear paste area when file is loaded
+  document.getElementById('paste-area').value = '';
+
+  const reader = new FileReader();
+  reader.onload = e => { fileContent = e.target.result; };
+  reader.readAsText(file);
+}
+
+function removeFile() {
+  selectedFile = null;
+  fileContent  = '';
+  document.getElementById('file-preview').classList.remove('show');
+  fileInput.value = '';
+}
+
+function formatSize(bytes) {
+  if (bytes < 1024)    return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+function toggleKey() {
+  const inp = document.getElementById('api-key');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+/* ─────────────────────────────────────────
+   Generation  (OpenRouter → DeepSeek)
+───────────────────────────────────────── */
+async function startGeneration() {
+  const apiKey = document.getElementById('api-key').value.trim();
+  const numQ   = document.getElementById('num-questions').value;
+  const diff   = document.getElementById('difficulty').value;
+  const pasted = document.getElementById('paste-area').value.trim();
+
+  // Resolve content: file takes priority, then paste
+  const content = fileContent || pasted;
+
+  if (!apiKey) { showToast('Please enter your OpenRouter API key'); return; }
+  if (!content) { showToast('Please upload a .txt file or paste your study material'); return; }
+
+  showScreen('loading-screen');
+  animateLoadingSteps();
+
+  // Truncate to ~30 000 chars to stay within context limits
+  const truncated = content.slice(0, 30000);
+
+  const systemPrompt =
+    `You are an expert exam question setter. You generate high-quality MCQs strictly in JSON.
+Return ONLY a valid JSON array — no markdown fences, no explanation, nothing else.
+Format:
+[
+  {
+    "question": "Question text here?",
+    "options": ["Option A", "Option B", "Option C", "Option D"],
+    "correct": 0,
+    "explanation": "Brief explanation of the correct answer."
+  }
+]
+Rules:
+- "correct" is the 0-based index of the correct option
+- Exactly 4 options per question
+- Distractors must be plausible and educational
+- Test genuine understanding, not just memorisation
+- Vary types: factual, conceptual, application-based`;
+
+  const userPrompt =
+    `STUDY MATERIAL:\n\n${truncated}\n\n---\n\nGenerate exactly ${numQ} MCQs at ${diff} difficulty based on the material above.`;
+
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+        'HTTP-Referer':  'https://mockmate.app',
+        'X-Title':       'MockMate'
+      },
+      body: JSON.stringify({
+        model: 'deepseek/deepseek-chat',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user',   content: userPrompt   }
+        ],
+        temperature: 0.7,
+        max_tokens:  4096
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err?.error?.message || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    const raw  = data?.choices?.[0]?.message?.content || '';
+
+    // Strip any accidental markdown fences
+    let clean = raw.replace(/```json|```/gi, '').trim();
+
+    // Extract the JSON array
+    const match = clean.match(/\[[\s\S]*\]/);
+    if (!match) throw new Error('DeepSeek did not return a valid JSON array. Try again.');
+
+    questions = JSON.parse(match[0]);
+    if (!Array.isArray(questions) || questions.length === 0)
+      throw new Error('No questions were generated. Try with more content.');
+
+    userAnswers = new Array(questions.length).fill(null);
+    current     = 0;
+
+    await delay(600);
+    showScreen('quiz-screen');
+    renderQuestion();
+
+  } catch (err) {
+    showScreen('upload-screen');
+    showToast('Error: ' + err.message);
+  }
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+function animateLoadingSteps() {
+  const steps = ['step-1','step-2','step-3','step-4'];
+  steps.forEach((id, i) => {
+    setTimeout(() => {
+      if (i > 0) {
+        const prev = document.getElementById(steps[i - 1]);
+        prev.classList.remove('active');
+        prev.classList.add('done');
+        prev.querySelector('.step-dot').textContent = '✓';
+      }
+      document.getElementById(id).classList.add('active');
+    }, i * 1200);
+  });
+}
+
+/* ─────────────────────────────────────────
+   Quiz rendering
+───────────────────────────────────────── */
+function renderQuestion() {
+  const q     = questions[current];
+  const total = questions.length;
+  const labels = ['A','B','C','D'];
+
+  document.getElementById('q-current').textContent = current + 1;
+  document.getElementById('q-total').textContent   = total;
+  document.getElementById('q-num').textContent     = String(current + 1).padStart(2, '0');
+  document.getElementById('question-text').textContent = q.question;
+  document.getElementById('progress-fill').style.width = ((current + 1) / total * 100) + '%';
+
+  const grid     = document.getElementById('options-grid');
+  const answered = userAnswers[current] !== null;
+  grid.innerHTML = '';
+
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+
+    if (answered) {
+      if (i === q.correct) btn.classList.add('correct');
+      else if (i === userAnswers[current] && i !== q.correct) btn.classList.add('wrong');
+      btn.disabled = true;
+    } else if (userAnswers[current] === i) {
+      btn.classList.add('selected');
+    }
+
+    btn.innerHTML = `<span class="option-key">${labels[i]}</span><span>${opt}</span>`;
+    if (!answered) btn.onclick = () => selectAnswer(i);
+    grid.appendChild(btn);
+  });
+
+  const expBox = document.getElementById('explanation-box');
+  if (answered) {
+    document.getElementById('explanation-text').textContent = q.explanation;
+    expBox.classList.add('show');
+  } else {
+    expBox.classList.remove('show');
+  }
+
+  document.getElementById('prev-btn').disabled = current === 0;
+  document.getElementById('next-btn').textContent =
+    current === total - 1 ? 'Finish ✦' : 'Next →';
+}
+
+function selectAnswer(idx) {
+  userAnswers[current] = idx;
+  renderQuestion();
+}
+
+function nextQuestion() {
+  if (current < questions.length - 1) { current++; renderQuestion(); }
+  else showResults();
+}
+
+function prevQuestion() {
+  if (current > 0) { current--; renderQuestion(); }
+}
+
+/* ─────────────────────────────────────────
+   Results
+───────────────────────────────────────── */
+function showResults() {
+  showScreen('results-screen');
+  const total = questions.length;
+  let correct = 0, wrong = 0, skipped = 0;
+
+  questions.forEach((q, i) => {
+    if      (userAnswers[i] === null)     skipped++;
+    else if (userAnswers[i] === q.correct) correct++;
+    else                                   wrong++;
+  });
+
+  const pct = Math.round(correct / total * 100);
+  document.getElementById('score-pct').textContent       = pct + '%';
+  document.getElementById('stat-correct').textContent    = correct;
+  document.getElementById('stat-wrong').textContent      = wrong;
+  document.getElementById('stat-skipped').textContent    = skipped;
+
+  let headline, subline;
+  if      (pct >= 80) { headline = '🏆 Excellent!';      subline = "You're well-prepared. Keep it up!"; }
+  else if (pct >= 60) { headline = '👍 Good Job!';        subline = 'Solid effort. Review the missed ones.'; }
+  else if (pct >= 40) { headline = '📚 Keep Studying';    subline = 'Go through the material again and retry.'; }
+  else                { headline = '💪 Don\'t Give Up!';  subline = 'Practice makes perfect. You\'ve got this!'; }
+
+  document.getElementById('result-headline').textContent = headline;
+  document.getElementById('result-subline').textContent  = subline;
+
+  // Animated ring
+  const circumference = 414.69;
+  setTimeout(() => {
+    document.getElementById('ring-fill').style.strokeDashoffset = circumference - (pct / 100 * circumference);
+    document.getElementById('ring-fill').style.stroke =
+      pct >= 70 ? '#43e97b' : pct >= 40 ? '#7c6fff' : '#ff6b6b';
+  }, 100);
+
+  // Review list
+  const list = document.getElementById('review-list');
+  list.innerHTML = '';
+  questions.forEach((q, i) => {
+    const ua         = userAnswers[i];
+    const isCorrect  = ua === q.correct;
+    const isSkipped  = ua === null;
+    const div = document.createElement('div');
+    div.className = 'review-item';
+    div.innerHTML = `
+      <div class="ri-q">Q${i+1}. ${q.question}</div>
+      <div class="ri-ans">
+        <span class="ri-badge ${isSkipped || !isCorrect ? 'wrong' : 'correct'}">
+          ${isSkipped ? 'SKIPPED' : isCorrect ? 'CORRECT' : 'WRONG'}
+        </span>
+        <span style="color:var(--muted);font-size:0.82rem">
+          ${isSkipped
+            ? 'Not answered'
+            : isCorrect
+              ? q.options[q.correct]
+              : `Your: ${q.options[ua]} · Correct: ${q.options[q.correct]}`}
+        </span>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+function retakeQuiz() {
+  userAnswers = new Array(questions.length).fill(null);
+  current = 0;
+  showScreen('quiz-screen');
+  renderQuestion();
+}
+
+function newQuiz() {
+  questions    = [];
+  userAnswers  = [];
+  fileContent  = '';
+  selectedFile = null;
+  document.getElementById('file-preview').classList.remove('show');
+  fileInput.value = '';
+  document.getElementById('paste-area').value = '';
+
+  // Reset loading steps
+  ['step-1','step-2','step-3','step-4'].forEach((id, i) => {
+    const el = document.getElementById(id);
+    el.classList.remove('active','done');
+    el.querySelector('.step-dot').textContent = i + 1;
+    if (i === 0) el.classList.add('active');
+  });
+
+  showScreen('upload-screen');
+}
+
+/* ─────────────────────────────────────────
+   Utilities
+───────────────────────────────────────── */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>
